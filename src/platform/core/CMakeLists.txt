@@ -2,20 +2,23 @@ option(USE_STATIC_SDL "Link against static version of SDL library." OFF)
 option(USE_SYSTEM_TOML11 "Use system-provided toml11 library." OFF)
 option(USE_SYSTEM_UNARR "Use system-provided unarr library." OFF)
 
-if(USE_STATIC_SDL)
-  find_package(SDL2 2.0.10
-    REQUIRED COMPONENTS SDL2-static
-    OPTIONAL_COMPONENTS SDL2main
-    CONFIG)
-else()
-  find_package(SDL2 2.0.10
-    REQUIRED COMPONENTS SDL2
-    OPTIONAL_COMPONENTS SDL2main
-    CONFIG)
-endif()
+# probably move sdl stuff to qt/cmakelists
+if (NOT EMSCRIPTEN)
+  if(USE_STATIC_SDL)
+    find_package(SDL2 2.0.10
+      REQUIRED COMPONENTS SDL2-static
+      OPTIONAL_COMPONENTS SDL2main
+      CONFIG)
+  else()
+    find_package(SDL2 2.0.10
+      REQUIRED COMPONENTS SDL2
+      OPTIONAL_COMPONENTS SDL2main
+      CONFIG)
+  endif()
 
-find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
+  find_package(OpenGL REQUIRED)
+  find_package(GLEW REQUIRED)
+endif()
 
 if(USE_SYSTEM_TOML11)
   find_package(toml11 3.7 REQUIRED)
@@ -54,7 +57,7 @@ endif()
 
 set(SOURCES
   src/device/ogl_video_device.cpp
-  src/device/sdl_audio_device.cpp
+  # src/device/sdl_audio_device.cpp
   src/loader/bios.cpp
   src/loader/rom.cpp
   src/loader/save_state.cpp
@@ -92,17 +95,25 @@ add_library(platform-core STATIC)
 target_sources(platform-core PRIVATE ${SOURCES} ${HEADERS} ${HEADERS_PUBLIC})
 target_include_directories(platform-core PRIVATE src PUBLIC include)
 
-if(TARGET SDL2::SDL2main)
-  target_link_libraries(platform-core PUBLIC SDL2::SDL2main)
-endif()
+if (NOT EMSCRIPTEN)
+  if(TARGET SDL2::SDL2main)
+    target_link_libraries(platform-core PUBLIC SDL2::SDL2main)
+  endif()
 
-if(USE_STATIC_SDL)
-  target_link_libraries(platform-core PUBLIC SDL2::SDL2-static)
-else()
-  target_link_libraries(platform-core PUBLIC SDL2::SDL2)
+  if(USE_STATIC_SDL)
+    target_link_libraries(platform-core PUBLIC SDL2::SDL2-static)
+  else()
+    target_link_libraries(platform-core PUBLIC SDL2::SDL2)
+  endif()
 endif()
 
 target_link_libraries(platform-core
   PRIVATE unarr::unarr
-  PUBLIC nba toml11::toml11 OpenGL::GL GLEW::GLEW
+  PUBLIC nba toml11::toml11
 )
+
+if (NOT EMSCRIPTEN)
+  target_link_libraries(platform-core
+    PUBLIC OpenGL::GL GLEW::GLEW
+  )
+endif()

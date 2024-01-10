@@ -99,3 +99,24 @@ jobs:
           name: NanoBoyAdvance-${{ runner.os }}
           path: NanoBoyAdvance.dmg
           if-no-files-found: error
+
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup emsdk                 
+        uses: mymindstorm/setup-emsdk@v10
+        with:
+          version: 3.1.50
+          actions-cache-folder: 'emsdk-cache'
+      - name: Build
+        run: |
+          emcmake cmake -B build -DPLATFORM_HYDRA=ON -DPLATFORM_QT=OFF
+          cmake --build build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: libNanoBoyAdvance-hydra.wasm
+          path: build/bin/hydra/libNanoBoyAdvance-hydra.wasm
+          if-no-files-found: error
